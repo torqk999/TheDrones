@@ -104,7 +104,7 @@ namespace IngameScript
             public DockingPort Port;
             public DateTime Registration;
             public DateTime LastCall;
-            public DateTime LastOperation;
+            //public DateTime LastOperation;
 
             public DroneRegistry(long id = 0, DroneFormSlot slot = null)//, int index = -1)
             {

@@ -395,7 +395,7 @@ namespace IngameScript
 
             return newActions;
         }
-        Vector3 NormalizeVectorRelative(MatrixD S, Vector3 D) // S = sourceBearing, D = WorldVectorDelta
+        Vector3 TransformVectorRelative(MatrixD S, Vector3 D) // S = sourceBearing, D = WorldVectorDelta
         {
             /* X,Y,Z = Normalized Vector Unit Coefficients
              * x,y,z = Delta Target Vector (raw World GPS)
@@ -444,8 +444,8 @@ namespace IngameScript
 
             float distance = Vector3.Distance(delta, head.GetPosition());
             Vector3 targetDelta = delta - head.GetPosition();
-            Vector3 targetNormal = NormalizeVectorRelative(head.CubeGrid.WorldMatrix, targetDelta);
-            Vector3 driftNormal = NormalizeVectorRelative(head.CubeGrid.WorldMatrix, DroneRC.GetShipVelocities().LinearVelocity);
+            Vector3 targetNormal = TransformVectorRelative(head.CubeGrid.WorldMatrix, targetDelta);
+            Vector3 driftNormal = TransformVectorRelative(head.CubeGrid.WorldMatrix, DroneRC.GetShipVelocities().LinearVelocity);
             Vector3 netNormal = targetNormal - driftNormal;
             Vector3 thrustNormal = netNormal * THRUST_SCALE;
 
@@ -492,7 +492,7 @@ namespace IngameScript
             double[] output = new double[3];
 
             IMyTerminalBlock head = (bDocking) ? (IMyTerminalBlock)DronePort : DroneRC;
-            Vector3 normalLook = NormalizeVectorRelative(head.WorldMatrix, Look);
+            Vector3 normalLook = TransformVectorRelative(head.WorldMatrix, Look);
 
             double targetYaw = Math.Atan2(normalLook.X, -normalLook.Z);
             double targetPitch = Math.Atan2(normalLook.Y, -normalLook.Z);

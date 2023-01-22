@@ -45,6 +45,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CONDENSED", "CONDENSED", "{
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hub_Form_Combo", "Hub_Form_Combo\Hub_Form_Combo.csproj", "{C32BC0A4-C00C-4218-8388-C68C85536809}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeaponCore Sample", "WeaponCore Sample\WeaponCore Sample.csproj", "{53D68AEE-D943-4A17-8737-F65252302BF7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -80,6 +82,8 @@ Global
 		{0BE16571-ACEE-4819-A1A4-A844031F6309}.Debug|x64.Build.0 = Debug|x64
 		{C32BC0A4-C00C-4218-8388-C68C85536809}.Debug|x64.ActiveCfg = Debug|x64
 		{C32BC0A4-C00C-4218-8388-C68C85536809}.Debug|x64.Build.0 = Debug|x64
+		{53D68AEE-D943-4A17-8737-F65252302BF7}.Debug|x64.ActiveCfg = Debug|x64
+		{53D68AEE-D943-4A17-8737-F65252302BF7}.Debug|x64.Build.0 = Debug|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
