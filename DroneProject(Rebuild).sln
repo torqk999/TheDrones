@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.32510.428
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Drone", "DroneProject(Rebuild)\Drone.csproj", "{81AB7632-46B7-4A53-B0A6-A431C9DC11EF}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hub", "Hub\Hub.csproj", "{5D20D6A7-07B6-411F-A347-584557124A18}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Formation", "Formation\Formation.csproj", "{824C7857-AA17-4B9A-8901-E69979D08F3A}"
@@ -47,15 +45,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hub_Form_Combo", "Hub_Form_
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeaponCore Sample", "WeaponCore Sample\WeaponCore Sample.csproj", "{53D68AEE-D943-4A17-8737-F65252302BF7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Backup Drone", "Backup Drone\Backup Drone.csproj", "{1776184B-1F15-4164-A872-308975C43DBF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Drone", "Backup Drone\Drone.csproj", "{1776184B-1F15-4164-A872-308975C43DBF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{81AB7632-46B7-4A53-B0A6-A431C9DC11EF}.Debug|x64.ActiveCfg = Debug|x64
-		{81AB7632-46B7-4A53-B0A6-A431C9DC11EF}.Debug|x64.Build.0 = Debug|x64
 		{5D20D6A7-07B6-411F-A347-584557124A18}.Debug|x64.ActiveCfg = Debug|x64
 		{5D20D6A7-07B6-411F-A347-584557124A18}.Debug|x64.Build.0 = Debug|x64
 		{824C7857-AA17-4B9A-8901-E69979D08F3A}.Debug|x64.ActiveCfg = Debug|x64
@@ -93,7 +89,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{81AB7632-46B7-4A53-B0A6-A431C9DC11EF} = {5A55A8C4-15D4-446C-8B3C-64997634CDBE}
 		{5D20D6A7-07B6-411F-A347-584557124A18} = {5A55A8C4-15D4-446C-8B3C-64997634CDBE}
 		{824C7857-AA17-4B9A-8901-E69979D08F3A} = {5A55A8C4-15D4-446C-8B3C-64997634CDBE}
 		{02210F2D-42C9-4DDB-86D1-3EA1E68E9A86} = {95E417D2-7A76-4F06-BB3F-74B69235681A}
