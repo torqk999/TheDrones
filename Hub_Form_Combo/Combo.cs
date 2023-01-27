@@ -22,6 +22,70 @@ namespace IngameScript
 {
     partial class Program : MyGridProgram
     {
+        /*#region TEST
+
+        void GetByte(out byte bite, bool[] bits)
+        {
+            int result = 0;
+
+            for (int i = 0; i < 8; i++)
+            {
+                result += bits[i] ? 1 : 0;
+                result = i < 7 ? result << 1 : result;
+            }
+            bite = (byte)result;
+        }
+
+        void GetBools(byte bite, bool[] bits)
+        {
+            uint buffer = bite;
+
+            for (int i = 0; i < 8; i++)
+            {
+                bits[i] = ((buffer & 128) == 128);
+                buffer = buffer << 1;
+            }
+        }
+
+        IMyTextSurface Surface;
+        StringBuilder Builder = new StringBuilder();
+
+        public Program()
+        {
+            Surface = Me.GetSurface(0);
+            Surface.ContentType = ContentType.TEXT_AND_IMAGE;
+            bool[] EX = new bool[]
+            {
+                true,
+                false,
+                false,
+                true,
+                true,
+                false,
+                false,
+                true
+            };
+            byte ex = 0;
+            for (int i = 0; i < EX.Length; i++)
+                Builder.Append($"{i}:{EX[i]}\n");
+            GetByte(out ex, EX);
+            Builder.Append($"result byte: {ex}\n");
+            GetBools(ex, EX);
+            Builder.Append("Conversion:\n");
+            for (int i = 0; i < EX.Length; i++)
+                Builder.Append($"{i}:{EX[i]}\n");
+            Surface.WriteText(Builder);
+        }
+
+        public void Main(string argument, UpdateType updateSource)
+        {
+
+        }
+
+        #endregion*/
+
+
+
 
         #region COMBO
 
@@ -36,8 +100,8 @@ namespace IngameScript
         const string ShipControlName = "HUB_CONTROL";
 
         const float DockDisplacement = 5;
-        const float Radius = 210;
-        const float Distance = 50;
+        const float Radius = 30;
+        const float Distance = 10;
 
         const int LiteralCount = 4;
         const int OUT_BOX_MAX = 16;
@@ -63,9 +127,9 @@ namespace IngameScript
             GROUP = 3,
             SLOT = 2,
             DRONE = 1,
-            SPLASH = 4,
-            DEBUG_STATIC = 5,
-            DEBUG_STREAM = 6
+            SPLASH = 6,
+            DEBUG_STATIC = 4,
+            DEBUG_STREAM = 5
         }
         public enum GUILayer
         {
@@ -88,6 +152,7 @@ namespace IngameScript
         IMyTextSurface[] Screens = new IMyTextSurface[Enum.GetNames(typeof(Screen)).Length];
 
         string[] FORM_BUFF;
+        string[] TICK_BUFF = new string[20];
         StringBuilder DisplayBuilder = new StringBuilder();
         StringBuilder DebugStream = new StringBuilder();
         StringBuilder DebugStatic = new StringBuilder();
@@ -102,7 +167,7 @@ namespace IngameScript
         int[] SelObjIndex = new int[Enum.GetValues(typeof(GUILayer)).Length];
         int[] LastLibraryInput = new int[2];
         int[] LastLibraryClock = new int[2];
-        
+
         static readonly string[] GroupActions = new string[]
         {
             "Idle",
@@ -143,11 +208,32 @@ namespace IngameScript
                 $"DroneSlots: {Groups[SelObjIndex[0]].AllSlots.Count}\n" +
                 $"OpenSlots: {Groups[SelObjIndex[0]].OpenSlots.Count}\n" +
                 $"Registered: {Registered.Count}\n" +
-                $"ResponseQueSize: {ResponseQue.Count}\n\n");
+                $"ResponseQueSize: {ResponseQue.Count}\n" +
+                $"MSG_COUNTS: {MSG_COUNT} : {LOST_EAR_COUNT} : {DRONE_EAR_COUNT}\n");
 
             Screens[(int)Screen.DEBUG_STREAM].WriteText(DebugStream);
             DebugStream.Clear();
             DebugStream.Append(">>> DEBUG STREAM >>>\n");
+        }
+        void DebugTicker()
+        {
+            try
+            {
+                IMyTextSurface tick = Screens[(int)Screen.DEBUG_STATIC];
+                tick.WriteText("");
+
+                for (int i = 1; i < TICK_BUFF.Length; i++)
+                {
+                    TICK_BUFF[i - 1] = TICK_BUFF[i];
+                    tick.WriteText(TICK_BUFF[i], true);
+                }
+                TICK_BUFF[TICK_BUFF.Length - 1] = DebugStatic.ToString();
+                tick.WriteText(TICK_BUFF[TICK_BUFF.Length - 1], true);
+                DebugStream.Append("Ticker Success!\n");
+            }
+            catch { DebugStream.Append("Ticker Fail!\n"); }
+
+            DebugStatic.Clear();
         }
         void MenuInput()
         {
@@ -202,7 +288,8 @@ namespace IngameScript
             return
                 $"R:{matrix.Right.X.ToString(digits)}|{matrix.Right.Y.ToString(digits)}|{matrix.Right.Z.ToString(digits)}\n" +
                 $"U:{matrix.Up.X.ToString(digits)}|{matrix.Up.Y.ToString(digits)}|{matrix.Up.Z.ToString(digits)}\n" +
-                $"F:{matrix.Forward.X.ToString(digits)}|{matrix.Forward.Y.ToString(digits)}|{matrix.Forward.Z.ToString(digits)}\n";
+                $"F:{matrix.Forward.X.ToString(digits)}|{matrix.Forward.Y.ToString(digits)}|{matrix.Forward.Z.ToString(digits)}\n" +
+                $"T:{matrix.Translation.X.ToString(digits)}|{matrix.Translation.Y.ToString(digits)}|{matrix.Translation.Z.ToString(digits)}\n";
         }
         void AppendLibraryItem(IGUIListing listing, Screen screen, bool newLine = true)
         {
@@ -254,6 +341,70 @@ namespace IngameScript
                 return;
             }
         }
+        /// <summary>
+        /// Design This!
+        /// </summary>
+        void SplashBuilder()
+        {
+            try
+            {
+                DisplayBuilder.Clear();
+                if (Groups.Count < 1)
+                {
+                    DisplayBuilder.Append("Nothing to Select!\n");
+                    Screens[(int)Screen.SPLASH].WriteText(DisplayBuilder);
+                    return;
+                }
+
+                DroneSlotGroup group = Groups[SelObjIndex[(int)GUILayer.GROUP]];
+                DroneSlot slot = group.AllSlots.Count > 0 ? group.AllSlots[SelObjIndex[(int)GUILayer.SLOT]] : null;
+                DroneRegistry drone = Registered.Count > 0 ? Registered[SelObjIndex[(int)GUILayer.DRONE]] : null;
+
+                switch (CurrentGUILayer)
+                {
+
+                    case GUILayer.GROUP:
+                        DisplayBuilder.Append($"{group.ReturnIndex()}:{group.ReturnListing()}\n");
+                        DisplayBuilder.Append($"SlotCount: {group.AllSlots.Count} | MemberCount: {group.Members.Count}\n");
+                        DisplayBuilder.Append(//$"Position: {group.CurrentOrigin.Position}\n" +
+                            $"Matrix: {MatrixToString(group.CurrentOrigin.Matrix, "#.##")}");
+                        if (group is DroneSwarm)
+                        {
+                            DroneSwarm swarm = (DroneSwarm)group;
+                            DisplayBuilder.Append($"Current Swarm Task: {swarm.Settings.Task}\n");
+                        }
+
+                        break;
+
+                    case GUILayer.SLOT:
+                        if (slot == null)
+                        {
+                            DisplayBuilder.Append("Nothing to Select!\n");
+                            break;
+                        }
+                        DisplayBuilder.Append($"{slot.ReturnIndex()}:{slot.ReturnListing()}\n");
+                        // + $"Delta: {slot.Status.Position}\n");
+                        DisplayBuilder.Append($"{(slot.Occupant == null ? "VACANT" : "OCCUPIED")}\n");
+                        if (slot.Occupant != null)
+                            DisplayBuilder.Append($"{slot.Occupant.ReturnListing()}\n");
+                        break;
+
+                    case GUILayer.DRONE:
+                        if (drone == null)
+                        {
+                            DisplayBuilder.Append("Nothing to Select!\n");
+                            break;
+                        }
+                        DisplayBuilder.Append($"| {drone.ReturnIndex()} |{drone.ReturnListing()}\n");
+                        DisplayBuilder.Append($"{drone.LastReport.Matrix.Translation} || {drone.LastReport.TimeStamp}\n");
+                        break;
+                }
+
+                Screens[(int)Screen.SPLASH].WriteText(DisplayBuilder);
+            }
+            catch { };
+        }
+
         void GroupListBuilder()
         {
             CursorIndex = 0;
@@ -307,7 +458,11 @@ namespace IngameScript
             DisplayBuilder.Append($"Drones: ({SelObjIndex[(int)GUILayer.DRONE]}/{Registered.Count})\n================\n");
 
             foreach (DroneRegistry reg in Registered)
-                AppendLibraryItem(reg, Screen.DRONE);
+            {
+                AppendLibraryItem(reg, Screen.DRONE, false);
+                DisplayBuilder.Append($"{reg.LastReport.TimeStamp}\n");
+            }
+                
 
             FormattedStringBuilder();
 
@@ -321,7 +476,7 @@ namespace IngameScript
                 DisplayBuilder.Append($"{InputLabels[i]}\n");
 
             for (int i = 0; i < actions.Length; i++)
-                DisplayBuilder.Append($"{i} - {actions[i]}\n");
+                DisplayBuilder.Append($"{i + 1} - {actions[i]}\n");
 
             Screens[(int)Screen.BUTTONS].WriteText(DisplayBuilder);
         }
@@ -333,7 +488,7 @@ namespace IngameScript
             startIndex = (LineCount - CursorIndex) < HalfScreenBufferSize &&
                 LineCount > HalfScreenBufferSize ? (LineCount - (2 * HalfScreenBufferSize)) : startIndex;
             startIndex = startIndex < 2 ? 2 : startIndex;
-            
+
             //DisplayBuilder.Append($"StartIndex: {startIndex}\n");
 
             try { DisplayBuilder.Append($"{FORM_BUFF[0]}\n{FORM_BUFF[1]}\n"); }
@@ -356,7 +511,7 @@ namespace IngameScript
 
         void ButtonPress(int button)
         {
-            switch(CurrentGUILayer)
+            switch (CurrentGUILayer)
             {
                 case GUILayer.GROUP:
                     GroupAction(button);
@@ -373,7 +528,7 @@ namespace IngameScript
         }
         void GroupAction(int action)
         {
-            switch(action)
+            switch (action)
             {
                 case 1:
                     try
@@ -518,7 +673,7 @@ namespace IngameScript
             SelObjIndex[(int)CurrentGUILayer] += up ? 1 : -1;
             RefreshSelection();
         }
-
+        
         void RefreshSelection()
         {
             RefreshIndex((int)GUILayer.GROUP, Groups.Count);
@@ -532,6 +687,7 @@ namespace IngameScript
             GroupListBuilder();
             SlotListBuilder();
             DroneListBuilder();
+            SplashBuilder();
         }
 
         bool UserInputString(ref string buffer)
@@ -756,10 +912,11 @@ namespace IngameScript
         string[] MSG_STR_BUFFER = new string[3]; // ??
         //byte[] MSG_BYTE_BUFFER = new byte[Enum.GetValues(typeof(SwarmRequest)).Length];
         float[] MSG_IX_BUFFER = new float[Enum.GetValues(typeof(MsgIx)).Length];
-        
+
         bool bConfigured;
-        //bool bUpdateGroupSettings;
         public int MSG_COUNT = 0;
+        public int DRONE_EAR_COUNT = 0;
+        public int LOST_EAR_COUNT = 0;
 
         List<PendingRequest> ResponseQue = new List<PendingRequest>();
         List<DroneRegistry> Registered = new List<DroneRegistry>();
@@ -787,22 +944,22 @@ namespace IngameScript
             M32 = 13,
             M33 = 14,
             M34 = 15,
-            M41 = 16,
-            M42 = 17,
-            M43 = 18,
+            POS_X = 16,
+            POS_Y = 17,
+            POS_Z = 18,
             M44 = 19,
-            POS_X = 20,
-            POS_Y = 21,
-            POS_Z = 22,
-            VEL_X = 23,
-            VEL_Y = 24,
-            VEL_Z = 25,
-            REQ = 26,
-            R_IND = 27,
-            FUEL = 28,
-            POWER = 29,
-            INTEG = 30,
-            AMMO = 31
+            //POS_X = 20,
+            //POS_Y = 21,
+            //POS_Z = 22,
+            VEL_X = 20,
+            VEL_Y = 21,
+            VEL_Z = 22,
+            REQ = 23,
+            R_IND = 24,
+            FUEL = 25,
+            POWER = 26,
+            INTEG = 27,
+            AMMO = 28
         }
         public enum DroneTask
         {
@@ -855,21 +1012,19 @@ namespace IngameScript
         {
             public static WorldFrame Zero = new WorldFrame(MatrixD.Zero, Vector3.Zero, Vector3.Zero);
             public DateTime TimeStamp;
-            public Vector3 Position;
             public Vector3 Velocity;
             public MatrixD Matrix;
 
-            public WorldFrame(MatrixD mat, Vector3 pos, Vector3 vel)//, DroneTask task)
+            public WorldFrame(MatrixD mat, Vector3 pos, Vector3 vel)
             {
                 TimeStamp = DateTime.Now;
-                Position = pos;
                 Velocity = vel;
                 Matrix = mat;
+                Matrix.Translation = pos;
             }
             public WorldFrame(IMyTerminalBlock block)
             {
                 TimeStamp = DateTime.Now;
-                Position = block.GetPosition();
                 Matrix = block.WorldMatrix;
                 Velocity = Vector3.Zero;
             }
@@ -877,23 +1032,20 @@ namespace IngameScript
             {
                 if (block == null)
                     return;
-                Vector3 oldPosition = Position;
-                Position = block.GetPosition();
-                Velocity = Position - oldPosition;
+                Vector3 oldPosition = Matrix.Translation;
                 Matrix = block.WorldMatrix;
+                Velocity = Matrix.Translation - oldPosition;
                 TimeStamp = DateTime.Now;
             }
             public void ReadFromStream(float[] stream)
             {
                 ExtractMatrixD(ref stream, ref Matrix, (int)MsgIx.M11);
-                ExtractVector3(ref stream, ref Position, (int)MsgIx.POS_X);
                 ExtractVector3(ref stream, ref Velocity, (int)MsgIx.VEL_X);
                 TimeStamp = DateTime.Now;
             }
             public void WriteToStream(float[] stream)
             {
                 InsertMatrixD(ref stream, Matrix, (int)MsgIx.M11);
-                InsertVector3(ref stream, Position, (int)MsgIx.POS_X);
                 InsertVector3(ref stream, Velocity, (int)MsgIx.VEL_X);
             }
             public bool Expired()
@@ -926,7 +1078,7 @@ namespace IngameScript
                 for (int i = 0; i < 8; i++)
                 {
                     result += bits[i] ? 1 : 0;
-                    result = result << 1;
+                    result = i < 7 ? result << 1 : result;
                 }
                 bite = (byte)result;
             }
@@ -937,7 +1089,7 @@ namespace IngameScript
 
                 for (int i = 0; i < 8; i++)
                 {
-                    bits[i] = ((buffer & 128) == 1);
+                    bits[i] = ((buffer & 128) == 128);
                     buffer = buffer << 1;
                 }
             }
@@ -946,6 +1098,7 @@ namespace IngameScript
             {
                 // Refresh? 0
                 Task = (DroneTask)stream[(int)SwarmRequest.TASK];
+                TaskIndex = stream[(int)SwarmRequest.INDEX];
                 Speed = stream[(int)SwarmRequest.SPEED];
                 ShieldSize = stream[(int)SwarmRequest.SHIELD_SIZE];
 
@@ -960,6 +1113,7 @@ namespace IngameScript
             {
                 // Refresh? 0
                 stream[(int)SwarmRequest.TASK] = (byte)Task;
+                stream[(int)SwarmRequest.INDEX] = TaskIndex;
                 stream[(int)SwarmRequest.SPEED] = Speed;
                 stream[(int)SwarmRequest.SHIELD_SIZE] = ShieldSize;
 
@@ -1001,18 +1155,19 @@ namespace IngameScript
             }
             public bool OccupySlot(DroneSlot slot = null)
             {
+                if (slot != null &&
+                    (slot.Group == null ||
+                     slot.Occupant != null))
+                    return false;
+
+                if (Slot != null)
+                    Slot.Occupant = null;
+
+                if (Group != null)
+                    Group.Members.Remove(this);
+
                 if (slot != null)
                 {
-                    if (slot.Group == null ||
-                        slot.Occupant != null)
-                        return false;
-
-                    if (Slot != null)
-                        Slot.Occupant = null;
-
-                    if (Group != null)
-                        Group.Members.Remove(this);
-
                     slot.Occupant = this;
                     slot.Group.Members.Add(this);
 
@@ -1020,10 +1175,13 @@ namespace IngameScript
                     Group.UpdateSlotGroup();
                 }
                 else
+                {
                     Group = null;
+                }
+
                 Slot = slot;
 
-                
+
                 return true;
             }
             public string Save()
@@ -1051,8 +1209,7 @@ namespace IngameScript
             {
                 string slot = Slot == null ? "NA" : Slot.ReturnIndex().ToString();
                 string output = $"{slot} | [DRONE]:{ID}";//\nTasks:";
-                //foreach (DroneTask task in AvailableTasks)
-                    //output += $" {task},";
+
                 return output;
             }
             public int ReturnIndex()
@@ -1086,15 +1243,15 @@ namespace IngameScript
             }
             public virtual void UpdateSlotGroup()
             {
-                UpdateOrigin();
+                //UpdateOrigin();
                 //foreach (DroneSlot slot in AllSlots)
-                    //slot.UpdateSlot();
+                //slot.UpdateSlot();
             }
             public virtual void UpdateOrigin()
             {
 
             }
-            public void CalculateOrigin()
+            /*public void CalculateSwarmCenter()
             {
                 OldOrigin = CurrentOrigin;
                 CurrentOrigin.Position = Vector3.Zero;
@@ -1104,7 +1261,7 @@ namespace IngameScript
                 }
                 CurrentOrigin.Position /= FrameBuffer.Count;
                 CurrentOrigin.Velocity = CurrentOrigin.Position - OldOrigin.Position;
-            }
+            }*/
             public void SortMembers()
             {
                 Members.Clear();
@@ -1146,7 +1303,7 @@ namespace IngameScript
             }
             public Vector3 ReturnPosition()
             {
-                return CurrentOrigin.Position;
+                return CurrentOrigin.Matrix.Translation;
             }
         }
         public class DockingCluster : DroneSlotGroup
@@ -1187,7 +1344,8 @@ namespace IngameScript
             public bool Spin = false;
 
             public DroneSettings Settings;
-            public WorldFrame Goal;
+            public WorldFrame Status;
+            //public WorldFrame Goal;
 
             double OriginAngle = 0;
             double AngleBuffer;
@@ -1196,7 +1354,7 @@ namespace IngameScript
 
             int FormationScalePow;
             float FormationScaleVal = 1;
-            byte[] SettingsBuffer = new byte[Enum.GetValues(typeof(SwarmRequest)).Length];
+            byte[] MSG_BYTE_BUFFER = new byte[5];
 
             public DroneSwarm(Program hub, int index, string tag, WorldFrame[] frames, DroneSettings init) : base(hub, index)
             {
@@ -1218,22 +1376,26 @@ namespace IngameScript
 
             public override void UpdateOrigin()
             {
+                CurrentOrigin.Update(HUB.Me);
                 FrameBuffer.Clear();
-                foreach(DroneSlot slot in AllSlots)
+                foreach (DroneSlot slot in AllSlots)
                 {
                     slot.UpdateSlot();
-                    FrameBuffer.Add(slot.CurrentDelta);
+                    FrameBuffer.Add(slot.Status);
                 }
-                CalculateOrigin();
+                //CalculateSwarmCenter();
             }
             public override void UpdateSlotGroup()
             {
+                UpdateOrigin();
                 base.UpdateSlotGroup();
-                foreach(DroneRegistry reg in Members)
+                foreach (DroneRegistry reg in Members)
                     if (reg.LINKED && !reg.SYNCED)
                     {
-                        Settings.WriteToStream(SettingsBuffer);
-                        HUB.IGC.SendBroadcastMessage(TAG, ImmutableArray.Create(SettingsBuffer));
+                        //HUB.DebugStatic.Clear();
+                        Settings.WriteToStream(MSG_BYTE_BUFFER);
+                        //HUB.Screens[(int)Screen.DEBUG_STATIC].WriteText(HUB.DebugStatic);
+                        HUB.IGC.SendBroadcastMessage(TAG, ImmutableArray.Create(MSG_BYTE_BUFFER));
                         foreach (DroneRegistry regg in Members)
                             regg.SYNCED = true;
                         break;
@@ -1302,7 +1464,7 @@ namespace IngameScript
                 if (slot == null)
                     return false;
 
-                return GenerateFormationLiteral(slot.CurrentDelta, out output);
+                return GenerateFormationLiteral(slot.FormationDelta, out output);
             }
             /*public bool GenerateFormationLiteral(DroneRegistry drone, out WorldFrame output)
             {
@@ -1346,18 +1508,20 @@ namespace IngameScript
             }*/
             public bool GenerateFormationLiteral(WorldFrame source, out WorldFrame output)
             {
-
-                Vector3 scaledVector = source.Position * FormationScaleVal;
+                //Vector3 positionBuffer = 
+                //Vector3 scaledVector = source.Matrix.Translation * FormationScaleVal;
 
                 AngleBuffer = OriginAngle;
                 if (Spin)
                     AngleBuffer += ReturnTimedAngle();
 
-                Vector3 relativeVector = DeTransformVectorRelative(GenerateOffsetMatrix(ref AngleBuffer), scaledVector);
+                Vector3 relativeVector = DeTransformVectorRelative(GenerateOffsetMatrix(ref AngleBuffer), source.Matrix.Translation);
                 output = new WorldFrame(
                     MatrixD.Multiply(CurrentOrigin.Matrix, source.Matrix),
-                    relativeVector + CurrentOrigin.Position,
+                    relativeVector + CurrentOrigin.Matrix.Translation,
                     CurrentOrigin.Velocity);
+
+                output.Matrix.Translation *= FormationScaleVal;
 
                 return true;
             }
@@ -1404,8 +1568,8 @@ namespace IngameScript
             public int Index;
             public DroneSlotGroup Group;
             public DroneRegistry Occupant;
-            public WorldFrame OldDelta;
-            public WorldFrame CurrentDelta;
+            //public WorldFrame OldDelta;
+            public WorldFrame Status;
 
             public DroneSlot(DroneSlotGroup group, int index)
             {
@@ -1414,11 +1578,11 @@ namespace IngameScript
             }
             public virtual void UpdateSlot()
             {
-                UpdateVelocity();
+                //UpdateVelocity();
             }
             void UpdateVelocity()
             {
-                CurrentDelta.Velocity = CurrentDelta.Position - OldDelta.Position;
+                //Status.Velocity = Status.Position - //OldDelta.Position;
             }
             public int ReturnIndex()
             {
@@ -1434,28 +1598,29 @@ namespace IngameScript
             }
             public virtual Vector3 ReturnVelocity()
             {
-                return CurrentDelta.Velocity;
+                return Status.Velocity;
             }
             public virtual MatrixD ReturnMatrix()
             {
-                return CurrentDelta.Matrix;
+                return Status.Matrix;
             }
             public virtual Vector3 ReturnPosition()
             {
-                return CurrentDelta.Position;
+                return Status.Matrix.Translation;
             }
         }
         public class SwarmPosition : DroneSlot
         {
-            WorldFrame LastOccupantReport;
+            public WorldFrame LastOccupantReport;
+            public WorldFrame FormationDelta;
             public SwarmPosition(WorldFrame frame, DroneSwarm group, int index) : base(group, index)
             {
-                CurrentDelta = frame;
+                FormationDelta = frame;
             }
 
             public override void UpdateSlot()
             {
-                ((DroneSwarm)Group).GenerateFormationLiteral(this, out CurrentDelta);
+                ((DroneSwarm)Group).GenerateFormationLiteral(this, out Status);
                 base.UpdateSlot();
             }
 
@@ -1479,7 +1644,7 @@ namespace IngameScript
                 return base.ReturnVelocity();
             }
 
-            
+
         }
         public class DockingPort : DroneSlot
         {
@@ -1487,7 +1652,7 @@ namespace IngameScript
 
             public override void UpdateSlot()
             {
-                CurrentDelta.Update(Connector);
+                Status.Update(Connector);
                 base.UpdateSlot();
             }
 
@@ -1518,7 +1683,7 @@ namespace IngameScript
                 return Connector.GetPosition();
             }
 
-            
+
 
             public override Vector3 ReturnVelocity()
             {
@@ -1541,7 +1706,7 @@ namespace IngameScript
         }
         DroneRegistry ReturnCandidate(DroneTask task)
         {
-            return Available.Find(x => x.AvailableTasks.IndexOf(task) > -1);
+            return Available.Find(x => x.AvailableTasks.IndexOf(task) > -1 && x.Slot == null);
         }
         void ReIndexRegistries()
         {
@@ -1552,9 +1717,7 @@ namespace IngameScript
         bool DroneResponse(PendingRequest pending)
         {
             DroneRegistry drone = Registered.Find(x => x.ID == pending.ID);
-
-            if (drone == null)
-                return false;
+            DebugStatic.Append($"OUT: {DateTime.Now} | {(drone == null ? "NULL" : drone.ID.ToString())}\n");
 
             DockingPort port = null;
             if (drone.Slot is DockingPort)
@@ -1568,10 +1731,12 @@ namespace IngameScript
                     MSG_STR_BUFFER[0] = RequestType.REGISTER.ToString();
                     MSG_STR_BUFFER[1] = HubChannel;
                     MSG_STR_BUFFER[2] = HubSwarmChannel;
-                    IGC.SendBroadcastMessage(LostChannel, ImmutableArray.Create(MSG_STR_BUFFER));
+
+                    IGC.SendBroadcastMessage($"DRONE_{drone.ID}", ImmutableArray.Create(MSG_STR_BUFFER));
 
                     return true;
 
+                case RequestType.IDLE:
                 case RequestType.TASK:
                     if (drone.Group == null || !(drone.Group is DroneSwarm))
                     {
@@ -1588,7 +1753,7 @@ namespace IngameScript
                         return false;
                     }
 
-                    buffer = drone.Slot.CurrentDelta;
+                    buffer = drone.Slot.Status;
                     MSG_IX_BUFFER[(int)MsgIx.REQ] = (float)((DroneSwarm)drone.Group).Settings.Task;
                     break;
 
@@ -1598,7 +1763,7 @@ namespace IngameScript
                     {
                         drone.OccupySlot(HubPier.FindSlotRNG());
                     }
-                        
+
                     if (port == null)
                     {
                         IGC.SendBroadcastMessage($"DRONE_{drone.ID}", "No docks sam...");
@@ -1611,12 +1776,12 @@ namespace IngameScript
                     Vector3 align = portLocation + (port.Connector.WorldMatrix.Forward * DockDisplacement);
                     if (pending.CurrentIndex == 0)
                     {
-                        buffer.Position = align;
+                        buffer.Matrix.Translation = align;
                         break;
                     }
                     if (pending.CurrentIndex == 1)
                     {
-                        buffer.Position = portLocation;
+                        buffer.Matrix.Translation = portLocation;
                         break;
                     }
                     /////////////////////////////////
@@ -1636,11 +1801,6 @@ namespace IngameScript
 
             buffer.WriteToStream(MSG_IX_BUFFER);
             IGC.SendBroadcastMessage($"DRONE_{drone.ID}", ImmutableArray.Create(MSG_IX_BUFFER));
-
-            //DebugStatic.Append(
-            //    $"Request: {pending.Request}\n" +
-            //    $"Channel: {channel}\n");
-            //Screens[(int)Screen.DEBUG_STATIC].WriteText(DebugStatic);
 
             return true;
         }
@@ -1697,7 +1857,8 @@ namespace IngameScript
         void UpdateHubFrames()
         {
             HubPier.CurrentOrigin.Update(Me);
-            HubSwarm.CurrentOrigin.Update(Me);
+            //HubSwarm.CurrentOrigin.Update(Me);
+            HubSwarm.UpdateSlotGroup();
         }
         void AssignmentHandler()
         {
@@ -1736,25 +1897,35 @@ namespace IngameScript
                 Available.Remove(reg);
 
             }
-                
+
             return result;
         }
         void InboxHandler()
         {
-            MSG_COUNT = 0;
-            while (MSG_COUNT < MAX_MSG_COUNT && LostEar.HasPendingMessage)
-                if (ProcessNextMsg(DebugStream, LostEar, ref MSG_IX_BUFFER))
+            LOST_EAR_COUNT = 0;
+            DRONE_EAR_COUNT = 0;
+            while (LOST_EAR_COUNT < MAX_MSG_COUNT && LostEar.HasPendingMessage)
+                if (ProcessNextMsg(LostEar, ref MSG_IX_BUFFER))
+                {
+                    DebugStatic.Append("Lost:\n");
                     AppendResponseQue();
-            
-            while (MSG_COUNT < MAX_MSG_COUNT && HubEar.HasPendingMessage)
-                if (ProcessNextMsg(DebugStream, HubEar, ref MSG_IX_BUFFER))
+                    LOST_EAR_COUNT++;
+                }
+
+            while (DRONE_EAR_COUNT < MAX_MSG_COUNT && HubEar.HasPendingMessage)
+                if (ProcessNextMsg(HubEar, ref MSG_IX_BUFFER))
+                {
+                    DebugStatic.Append("Found:\n");
                     AppendResponseQue();
+                    DRONE_EAR_COUNT++;
+                }
+
         }
         void AppendResponseQue()
         {
             DroneRegistry droneReg = null;
             long id = 0;
-            ExtractID(ref MSG_IX_BUFFER, ref id, 0);
+            ExtractID(ref MSG_IX_BUFFER, ref id, (int)MsgIx.ID_0);
 
             for (int i = 0; i < Registered.Count; i++)
                 if (Registered[i].ID == id)
@@ -1766,47 +1937,54 @@ namespace IngameScript
             if (droneReg == null)
                 droneReg = Registration(id);
 
+            DebugStatic.Append($"IN: {DateTime.Now} | {(droneReg == null ? "NULL" : droneReg.ID.ToString())}\n");
+
             if (!droneReg.LINKED)
                 droneReg.LINKED = true;
 
             droneReg.LastReport.ReadFromStream(MSG_IX_BUFFER);
             RequestType request = (RequestType)MSG_IX_BUFFER[(int)MsgIx.REQ];
-            ResponseQue.Add(new PendingRequest(droneReg.ID, request, (int)MSG_IX_BUFFER[(int)MsgIx.R_IND]));
+            int requestIndex = (int)MSG_IX_BUFFER[(int)MsgIx.R_IND];
+
+            ResponseQue.Add(new PendingRequest(droneReg.ID, request, requestIndex));
         }
         void OutBoxHandler()
         {
-            for (int i = 0; i < ResponseQue.Count && i < OUT_BOX_MAX; i++)
+            if (ResponseQue.Count < 1)
+                return;
+
+            for (int i = ResponseQue.Count - 1; i > - 1 && ResponseQue.Count - i < OUT_BOX_MAX; i--)
             {
-                DroneResponse(ResponseQue[0]);
-                ResponseQue.RemoveAt(0);
+                DroneResponse(ResponseQue[i]);
+                ResponseQue.RemoveAt(i);
             }
         }
-        bool ProcessNextMsg(StringBuilder debug, IMyBroadcastListener ear, ref float[] buffer)
+        bool ProcessNextMsg(IMyBroadcastListener ear, ref float[] buffer)
         {
             ImmutableArray<float> raw = ((ImmutableArray<float>)ear.AcceptMessage().Data);
             if (raw.Length != buffer.Length)
                 return false;
 
+            MSG_COUNT++;
             for (int i = 0; i < buffer.Length; i++)
-            {
-                if (MSG_COUNT >= MAX_MSG_COUNT)
-                    break;
-                MSG_COUNT++;
                 buffer[i] = i < raw.Length ? raw[i] : 0;
-            }
 
             return true;
         }
         void CleanupPool()
         {
+            bool proc = false;
             for (int i = Registered.Count - 1; i > -1; i--)
             {
                 if (Registered[i].LastReport.Expired())
                 {
                     Registered[i].OccupySlot();
                     Registered.RemoveAt(i);
+                    proc = true;
                 }
             }
+            if (proc)
+                ReIndexRegistries();
         }
         void GenerateDocks()
         {
@@ -1818,7 +1996,7 @@ namespace IngameScript
         void GenerateTestFormation()
         {
             GenerateLatitudeSphereDeltas(Radius, Distance);
-            DroneSettings settings = new DroneSettings(DroneTask.FORM, 0, 25, 20);
+            DroneSettings settings = new DroneSettings(DroneTask.IDLE, 0, 25, 20);
             HubSwarm = new DroneSwarm(this, GenerateGroupIndex(), HubSwarmChannel, SphereDeltas, settings);
             Groups.Add(HubSwarm);
         }
@@ -1837,6 +2015,10 @@ namespace IngameScript
             PBscreen = Me.GetSurface(0);
             PBscreen.ContentType = ContentType.TEXT_AND_IMAGE;
             DebugStatic.Clear();
+
+            for (int i = 0; i < TICK_BUFF.Length; i++)
+                TICK_BUFF[i] = "\n";
+            
             try
             {
                 HubControl = (IMyShipController)GridTerminalSystem.GetBlockWithName(ShipControlName);
@@ -1858,22 +2040,21 @@ namespace IngameScript
                         Screens[i].ContentType = ContentType.TEXT_AND_IMAGE;
                         Screens[i].WriteText("");
                     }
-                        
 
                 bConfigured = true;
             }
             catch { bConfigured = false; return; }
-            
+
 
             GenerateDocks();
             GenerateLatitudeSphereDeltas(Radius, Distance, true);
             GenerateTestFormation();
-            Load();
+            //Load();
 
             LostEar = IGC.RegisterBroadcastListener(LostChannel);
             HubEar = IGC.RegisterBroadcastListener(HubChannel);
-            HubEar.SetMessageCallback();
-            Runtime.UpdateFrequency = UpdateFrequency.Update1;
+            //HubEar.SetMessageCallback();
+            Runtime.UpdateFrequency = UpdateFrequency.Update10;
         }
         public void Main(string argument, UpdateType updateSource)
         {
@@ -1881,7 +2062,7 @@ namespace IngameScript
             MenuInput();
             GUIUpdate();
             Debugging();
-            
+            DebugTicker();
 
             if (!bConfigured)
                 return;
@@ -1967,8 +2148,6 @@ namespace IngameScript
                     catch { }
                     break;
             }
-            //DebugStatic.Append($"Last Command: {argument}\n");
-            //Screens[(int)Screen.DEBUG_STATIC].WriteText(DebugStatic);
         }
         public void Save()
         {
@@ -1983,7 +2162,7 @@ namespace IngameScript
                 foreach (PendingRequest request in ResponseQue)
                     Storage += $"{request.ID}:{(int)request.Request}:{request.CurrentIndex}\n";
 
-                Screens[(int)Screen.DEBUG_STATIC].WriteText(Storage);
+                //Screens[(int)Screen.DEBUG_STATIC].WriteText(Storage);
             }
             catch { }
         }
