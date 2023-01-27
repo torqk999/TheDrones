@@ -47,6 +47,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hub_Form_Combo", "Hub_Form_
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeaponCore Sample", "WeaponCore Sample\WeaponCore Sample.csproj", "{53D68AEE-D943-4A17-8737-F65252302BF7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Backup Drone", "Backup Drone\Backup Drone.csproj", "{1776184B-1F15-4164-A872-308975C43DBF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -84,6 +86,8 @@ Global
 		{C32BC0A4-C00C-4218-8388-C68C85536809}.Debug|x64.Build.0 = Debug|x64
 		{53D68AEE-D943-4A17-8737-F65252302BF7}.Debug|x64.ActiveCfg = Debug|x64
 		{53D68AEE-D943-4A17-8737-F65252302BF7}.Debug|x64.Build.0 = Debug|x64
+		{1776184B-1F15-4164-A872-308975C43DBF}.Debug|x64.ActiveCfg = Debug|x64
+		{1776184B-1F15-4164-A872-308975C43DBF}.Debug|x64.Build.0 = Debug|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -104,6 +108,7 @@ Global
 		{67B90C9D-A2C5-4B5B-8CB0-2E3ADDCD326B} = {BFCA7A65-8AA7-417B-90DE-5E6D5FE8A816}
 		{0BE16571-ACEE-4819-A1A4-A844031F6309} = {BFCA7A65-8AA7-417B-90DE-5E6D5FE8A816}
 		{C32BC0A4-C00C-4218-8388-C68C85536809} = {129BC210-2B67-4389-9922-9E2EC8DB7728}
+		{1776184B-1F15-4164-A872-308975C43DBF} = {5A55A8C4-15D4-446C-8B3C-64997634CDBE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {4BF27CB5-E5D6-4BF6-ACA4-DCD1F6F0670E}
