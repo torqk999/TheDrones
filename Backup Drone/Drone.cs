@@ -136,7 +136,8 @@ namespace IngameScript
             LOBBY,
             FORM,
             HAUL,
-            MINE
+            MINE,
+            GRIND
         }
         public enum RequestType
         {

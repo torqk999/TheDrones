@@ -305,9 +305,8 @@ namespace IngameScript
                 if (CurrentGUILayer == listing.ReturnLayer() &&
                     SelObjIndex[(int)listing.ReturnLayer()] == listing.ReturnIndex())
                 {
-                    CursorIndex = LineCount - 1;
+                    CursorIndex = LineCount + 1; // -1 for indice, +2 for header lines
                     cursor = 1;
-                    //DisplayBuilder.Append($"SettingCursorIndex: {CursorIndex}\n");
                 }
                 else
                     cursor = 0;
@@ -319,7 +318,6 @@ namespace IngameScript
             DisplayBuilder.Append(entry);
             CharBuffers[(int)screen] = entry.Length > CharBuffers[(int)screen] ? entry.Length : CharBuffers[(int)screen];
             LineCount = newLine ? LineCount + 1 : LineCount;
-            //DisplayBuilder.Append($"newLine: {newLine} || stringCount: {StringCount}\n");
         }
         void RefreshIndex(int layer, int count)
         {
@@ -461,6 +459,7 @@ namespace IngameScript
             {
                 AppendLibraryItem(reg, Screen.DRONE, false);
                 DisplayBuilder.Append($"{reg.LastReport.TimeStamp}\n");
+                LineCount++;
             }
                 
 
@@ -484,12 +483,9 @@ namespace IngameScript
         {
             FORM_BUFF = DisplayBuilder.ToString().Split('\n');
             DisplayBuilder.Clear();
-            int startIndex = CursorIndex - HalfScreenBufferSize;
-            startIndex = (LineCount - CursorIndex) < HalfScreenBufferSize &&
-                LineCount > HalfScreenBufferSize ? (LineCount - (2 * HalfScreenBufferSize)) : startIndex;
+            int startIndex = CursorIndex - HalfScreenBufferSize < 0 ? 2 : CursorIndex - HalfScreenBufferSize;
+            startIndex = CursorIndex + HalfScreenBufferSize > LineCount ? LineCount - (2 * (HalfScreenBufferSize - 1)) : startIndex;
             startIndex = startIndex < 2 ? 2 : startIndex;
-
-            //DisplayBuilder.Append($"StartIndex: {startIndex}\n");
 
             try { DisplayBuilder.Append($"{FORM_BUFF[0]}\n{FORM_BUFF[1]}\n"); }
             catch { return; }
@@ -2054,7 +2050,7 @@ namespace IngameScript
             LostEar = IGC.RegisterBroadcastListener(LostChannel);
             HubEar = IGC.RegisterBroadcastListener(HubChannel);
             //HubEar.SetMessageCallback();
-            Runtime.UpdateFrequency = UpdateFrequency.Update10;
+            Runtime.UpdateFrequency = UpdateFrequency.Update1;
         }
         public void Main(string argument, UpdateType updateSource)
         {
