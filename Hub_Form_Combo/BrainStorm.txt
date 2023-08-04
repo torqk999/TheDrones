@@ -1,0 +1,5 @@
+- Scouting??(Secotr report, response options, ore info, threat info)
+- Quadrants / Overseer / Multi-Stations
+	- Squad merging/splitting
+	- Resource requesting
+	- Reinforcment/Construction
