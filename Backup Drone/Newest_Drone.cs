@@ -714,39 +714,46 @@ namespace IngameScript
         }
         void SetupShipControl()
         {
+            DebugLog.Append("yo0?\n");
+
             List<IMyShipController> controllers = new List<IMyShipController>();
             GridTerminalSystem.GetBlocksOfType(controllers);
+
+            DebugLog.Append("yo1?\n");
 
             List<IMyRemoteControl> remotes = new List<IMyRemoteControl>();
             GridTerminalSystem.GetBlocksOfType(remotes);
 
-            DebugLog.Append("yo?\n");
+            DebugLog.Append("yo2?\n");
 
             if (remotes.Count > 0)
             {
                 SetupRemoteControl(remotes[0]);
             }
-            DebugLog.Append("yo?\n");
+            DebugLog.Append("yo3?\n");
             if (controllers.Count > 0)
                 DroneControl = controllers[0];
             else if (RCavailable)
                 DroneControl = DroneRC;
-            DebugLog.Append("yo?\n");
+            DebugLog.Append("yo4?\n");
             if (DroneControl != null)
             {
-                DebugLog.Append("yo?\n");
+                DebugLog.Append("yo5?\n");
                 PrimaryHead = DroneControl;
                 if (CockpitAvailable)
                 {
                     DebugLog.Append("Cockpit available!\n");
-                    CockpitScreen = ((IMyCockpit)DroneControl).GetSurface(0);
+                    try { CockpitScreen = ((IMyCockpit)DroneControl).GetSurface(0); }
+                    catch { }
+                    CockpitScreen = CockpitScreen == null ? Me.GetSurface(0) : CockpitScreen;
                     CockpitScreen.ContentType = ContentType.TEXT_AND_IMAGE;
                     CockpitScreen.WriteText("");
+
                 }
             }
             else
                 PrimaryHead = Me;
-            DebugLog.Append("yo?\n");
+            DebugLog.Append("yo6?\n");
         }
         /*void SetupCargos()
         {

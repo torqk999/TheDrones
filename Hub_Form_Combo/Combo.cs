@@ -7,6 +7,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using VRage;
 using VRage.Collections;
@@ -59,6 +60,62 @@ namespace IngameScript
             int ReturnIndex();
             GUILayer ReturnLayer();
         }
+
+        public delegate void GUIAction();
+        public class GUIButtonAction
+        {
+            public string Name;
+            public GUIAction myAction;
+            public GUIButtonPage myLayer;
+
+            public GUIButtonAction(GUIButtonPage myLayer, GUIAction myAction, string name)
+            {
+                this.myLayer = myLayer;
+                this.myAction = myAction;
+                Name = name;
+            }
+        }
+
+        public class GUIButtonPage
+        {
+            public string Name;
+            public Dictionary<GUIEvent, GUIButtonAction> Actions;
+
+            public GUIButtonPage(GUILayer layer)
+            {
+                Name = layer.ToString();
+                Actions = new Dictionary<GUIEvent, GUIButtonAction>();
+            }
+
+            public GUIButtonPage(string name, Dictionary<GUIEvent, GUIButtonAction> actions)
+            {
+                Name = name;
+                Actions = actions != null ? actions : new Dictionary<GUIEvent, GUIButtonAction>();
+            }
+
+            public void EventPress(GUIEvent press)
+            {
+                Actions[press].myAction();
+            }
+        }
+
+        public Dictionary<GUILayer, GUIButtonPage> GUIPages;
+
+        public void EventPress(GUIEvent press)
+        {
+            GUIPages[CurrentGUILayer].EventPress(press);
+        }
+
+        //void SetupGUI()
+        //{
+        //    GUIPages = new Dictionary<GUILayer, GUIButtonPage>();
+        //
+        //    GUIButtonPage groupPage = new GUIButtonPage(GUILayer.GROUP);
+        //    groupPage.Actions.Add(GUIEvent.ALPHA_1, new GUIButtonAction(groupPage, ))
+        //
+        //    GUIPages.Add(GUILayer.GROUP, )
+        //}
+
         public enum Screen
         {
             BUTTONS = 0,
@@ -75,8 +132,18 @@ namespace IngameScript
             SLOT = 1,
             DRONE = 2
         }
-        public enum GUINav
+        public enum GUIEvent
         {
+            ALPHA_1,
+            ALPHA_2,
+            ALPHA_3,
+            ALPHA_4,
+            ALPHA_5,
+            ALPHA_6,
+            ALPHA_7,
+            ALPHA_8,
+            ALPHA_9,
+
             SCROLL_UP,
             SCROLL_DOWN,
             UP,
@@ -209,7 +276,7 @@ namespace IngameScript
                 LastLibraryInput[0] = z;
                 if (z != 0)
                 {
-                    GUINav nav = z > 0 ? GUINav.UP : GUINav.DOWN;
+                    GUIEvent nav = z > 0 ? GUIEvent.UP : GUIEvent.DOWN;
                     GUINavigation(nav);
                 }
                 else
@@ -222,7 +289,7 @@ namespace IngameScript
                 LastLibraryInput[1] = x;
                 if (x != 0)
                 {
-                    GUINav nav = x < 0 ? GUINav.BACK : GUINav.SELECT;
+                    GUIEvent nav = x < 0 ? GUIEvent.BACK : GUIEvent.SELECT;
                     GUINavigation(nav);
                 }
                 else
@@ -234,7 +301,8 @@ namespace IngameScript
 
         string MatrixToStringA(MatrixD matrix)
         {
-            return $"position: {matrix.M41} : {matrix.M42} : {matrix.M43}\n" +
+            return
+                $"position: {matrix.M41} : {matrix.M42} : {matrix.M43}\n" +
                 $"Right: {matrix.M11} : {matrix.M12} : {matrix.M13}\n" +
                 $"Up: {matrix.M21} : {matrix.M22} : {matrix.M23}\n" +
                 $"Forward: {matrix.M31} : {matrix.M32} : {matrix.M33}";
@@ -603,23 +671,23 @@ namespace IngameScript
                     break;
             }
         }
-        void GUINavigation(GUINav dir)
+        void GUINavigation(GUIEvent dir)
         {
             switch (dir)
             {
-                case GUINav.UP:
+                case GUIEvent.UP:
                     ScrollSelection(true);
                     break;
 
-                case GUINav.DOWN:
+                case GUIEvent.DOWN:
                     ScrollSelection(false);
                     break;
 
-                case GUINav.BACK:
+                case GUIEvent.BACK:
                     ChangeGUILayer(false);
                     break;
 
-                case GUINav.SELECT:
+                case GUIEvent.SELECT:
                     ChangeGUILayer(true);
                     break;
             }
@@ -1217,8 +1285,6 @@ namespace IngameScript
         {
             public long ID;
             public int RegisterIndex;
-            //public bool LINKED = false;
-            //public bool SYNCED = false;
             public DateTime Registration;
             public List<DroneTask> AvailableTasks = new List<DroneTask>(); // WIP
 
@@ -1340,7 +1406,6 @@ namespace IngameScript
             {
                 Index = index;
                 CenterBlock = block;
-                Settings = SwarmSettings.Default;
                 ClearSlots();
             }
             public virtual void UpdateSlotGroup()

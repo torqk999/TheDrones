@@ -48,7 +48,7 @@
     <AdditionalFiles Include="MDK\MDK.paths.props">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </AdditionalFiles>
-    <Compile Include="Drone.cs" />
+    <Compile Include="Newest_Drone.cs" />
     <AdditionalFiles Include="Instructions.readme" />
     <AdditionalFiles Include="thumb.png" />
     <AdditionalFiles Include="MDK\whitelist.cache" />
